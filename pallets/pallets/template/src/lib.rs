@@ -14,13 +14,11 @@ pub use pallet::*;
 // #[cfg(feature = "runtime-benchmarks")]
 // mod benchmarking;
 
-use frame_support::pallet_prelude::*;
-use frame_system::pallet_prelude::*;
-
 #[frame_support::pallet]
 pub mod pallet {
+	use frame_support::pallet_prelude::*;
+	use frame_system::pallet_prelude::*;
 
-	pub use super::*;
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
@@ -102,26 +100,5 @@ pub mod pallet {
 				},
 			}
 		}
-	}
-}
-
-impl<T:Config> Pallet<T>{
-
-	pub fn update_storage(value:u32) -> DispatchResult{
-		Something::<T>::put(value);
-		Ok(())
-	}
-}
-
-
-pub trait DoSome{
-	fn increase_value(value:u32) -> u32;
-
-}
-
-
-impl<T:Config> DoSome for Pallet<T>{
-	fn increase_value(value:u32) -> u32{
-		value +5
 	}
 }
