@@ -151,6 +151,7 @@ parameter_types! {
 	pub BlockLength: frame_system::limits::BlockLength = frame_system::limits::BlockLength
 		::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
 	pub const SS58Prefix: u8 = 42;
+	pub const Limit: u64 = 5; 
 }
 
 // Configure FRAME pallets to include in runtime.
@@ -281,7 +282,10 @@ impl pallet_demo::Config for Runtime {
 
 impl pallet_kitties::Config for Runtime {
 	type Event = Event;
-	type Currency =Balances ;
+	type Currency =Balances;
+	type Time = Timestamp;
+	type UnixTime = pallet_timestamp::Pallet<Runtime>;
+	type Limit = Limit;
 }
 
 impl pallet_tightly_coupling::Config for Runtime {

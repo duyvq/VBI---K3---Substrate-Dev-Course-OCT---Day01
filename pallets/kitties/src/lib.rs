@@ -4,7 +4,7 @@
 /// Learn more about FRAME and the core library of Substrate FRAME pallets:
 /// <https://docs.substrate.io/v3/runtime/frame>
 pub use pallet::*;
-
+// use pallet_timestamp::{self as timestamp}; this is for case tight coupling
 // #[cfg(test)]
 // mod mock;
 
@@ -20,9 +20,12 @@ use sp_std::vec::Vec;
 use scale_info::TypeInfo;
 pub type Id = u32;
 use sp_runtime::ArithmeticError;
-use frame_support::traits::Currency;
+use frame_support::traits::{Currency, Time, UnixTime, Get};
+
 
 type BalanceOf<T> = <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+// for loose coupling with trait Time, use "type TimeStampOf<T> = <<T as Config>::Time as Time>::Moment;"" 
+
 #[frame_support::pallet]
 pub mod pallet {
 
@@ -34,6 +37,7 @@ pub mod pallet {
 		pub price: BalanceOf<T>,
 		pub gender: Gender,
 		pub owner: T::AccountId,
+		pub created_date: u64, // for loose coupling with trait Time, use "TimeStampOf<T>,"" // For case tight coupling, use type "<T as pallet_timestamp::Config>::Moment,""
 	}
 	#[derive(Clone, Encode, Decode, PartialEq, Copy, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 	pub enum Gender {
@@ -43,10 +47,14 @@ pub mod pallet {
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
-	pub trait Config: frame_system::Config {
+	pub trait Config: frame_system::Config  /* + timestamp::Config*/ /* part in comment is for case tight coupling*/{
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 		type Currency: Currency<Self::AccountId>;
+		type Time: Time; // Loose coupling with trait Time
+		type UnixTime: UnixTime; // Loose coupling with trait UnixTime
+		#[pallet::constant]
+		type Limit: Get<u64>;
 	}
 
 	#[pallet::pallet]
@@ -103,11 +111,17 @@ pub mod pallet {
 			// Make sure the caller is from a signed origin
 			let owner = ensure_signed(origin)?;
 			log::info!("total balance:{:?}", T::Currency::total_balance(&owner));
+			log::info!("Unix Time:{:?}",  <<T as pallet::Config>::Time as frame_support::traits::Time>::now()); // <<T as pallet::Config>::UnixTime as frame_support::traits::UnixTime>::now()
+
 			let gender = Self::gen_gender(&dna)?;
-			let kitty = Kitty::<T> { dna: dna.clone(), price: 0u32.into(), gender, owner: owner.clone() };
+			let created_date = T::UnixTime::now().as_secs(); // For tight coupling, use <timestamp::Pallet<T>>::get();
+			let kitty = Kitty::<T> { dna: dna.clone(), price: 0u32.into(), gender, owner: owner.clone(), created_date};
 
 			// Check if the kitty does not already exist in our storage map
 			ensure!(!Kitties::<T>::contains_key(&kitty.dna), Error::<T>::DuplicateKitty);
+
+			// Each user is allowed to have 5 kitties maximum
+			ensure!(KittiesOwned::<T>::get(&owner).len() < T::Limit::get().try_into().unwrap(), Error::<T>::TooManyOwned);
 
 			// Performs this operation first as it may fail
 			let current_id = KittyId::<T>::get();
@@ -136,7 +150,8 @@ pub mod pallet {
 			let mut kitty = Kitties::<T>::get(&dna).ok_or(Error::<T>::NoKitty)?;
 			ensure!(kitty.owner == from, Error::<T>::NotOwner);
 			ensure!(from != to, Error::<T>::TransferToSelf);
-
+			// Ensure receiver doesn't have maximum kitties
+			ensure!(KittiesOwned::<T>::get(&to).len() < T::Limit::get().try_into().unwrap(), Error::<T>::TooManyOwned);
 			let mut from_owned = KittiesOwned::<T>::get(&from);
 
 			// Remove kitty from list of owned kitties.
@@ -159,8 +174,6 @@ pub mod pallet {
 
 			Ok(())
 		}
-
-
 	}
 }
 
@@ -173,7 +186,9 @@ impl<T> Pallet<T> {
 		}
 		Ok(res)
 	}
+
 }
+
 
 // tóm tắt laik
 // loosely coupling
