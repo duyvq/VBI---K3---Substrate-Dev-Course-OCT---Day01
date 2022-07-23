@@ -151,7 +151,6 @@ parameter_types! {
 	pub BlockLength: frame_system::limits::BlockLength = frame_system::limits::BlockLength
 		::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
 	pub const SS58Prefix: u8 = 42;
-	pub const Limit: u64 = 5; 
 }
 
 // Configure FRAME pallets to include in runtime.
@@ -280,12 +279,15 @@ impl pallet_demo::Config for Runtime {
 	type Event = Event;
 }
 
+parameter_types! {
+	pub const MaxKitty:u32 = 10;
+}
 impl pallet_kitties::Config for Runtime {
 	type Event = Event;
-	type Currency =Balances;
-	type Time = Timestamp;
-	type UnixTime = pallet_timestamp::Pallet<Runtime>;
-	type Limit = Limit;
+	type Currency = Balances;
+	type KittyTime = Timestamp;
+	type Max = MaxKitty;
+	type KittyRandom = RandomnessCollectiveFlip;
 }
 
 impl pallet_tightly_coupling::Config for Runtime {
@@ -295,21 +297,6 @@ impl pallet_tightly_coupling::Config for Runtime {
 impl pallet_loosely_coupling::Config for Runtime {
 	type Event = Event;
 	type Increase =TemplateModule ;
-}
-
-parameter_types! {
-	pub const ReservationFee: Balance = 10_000;
-}
-
-impl pallet_nicks::Config for Runtime {
-	type Event = Event;
-	type Currency = Balances;
-	type ReservationFee = ReservationFee;
-	type Slashed = ();
-	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type MinLength = ConstU32<8>;
-	type MaxLength = ConstU32<32>;
-	
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -333,7 +320,6 @@ construct_runtime!(
 		Kitties: pallet_kitties,
 		Tightly: pallet_tightly_coupling,
 		Loosely: pallet_loosely_coupling,
-		Nicks: pallet_nicks,
 	}
 );
 
@@ -378,7 +364,8 @@ mod benches {
 		[frame_system, SystemBench::<Runtime>]
 		[pallet_balances, Balances]
 		[pallet_timestamp, Timestamp]
-		[pallet_template, TemplateModule]
+		// [pallet_template, TemplateModule]
+		[pallet_kitties, Kitties]
 	);
 }
 
