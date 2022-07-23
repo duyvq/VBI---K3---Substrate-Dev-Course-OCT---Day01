@@ -297,7 +297,20 @@ impl pallet_loosely_coupling::Config for Runtime {
 	type Increase =TemplateModule ;
 }
 
+parameter_types! {
+	pub const ReservationFee: Balance = 10_000;
+}
 
+impl pallet_nicks::Config for Runtime {
+	type Event = Event;
+	type Currency = Balances;
+	type ReservationFee = ReservationFee;
+	type Slashed = ();
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type MinLength = ConstU32<8>;
+	type MaxLength = ConstU32<32>;
+	
+}
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
@@ -320,6 +333,7 @@ construct_runtime!(
 		Kitties: pallet_kitties,
 		Tightly: pallet_tightly_coupling,
 		Loosely: pallet_loosely_coupling,
+		Nicks: pallet_nicks,
 	}
 );
 
