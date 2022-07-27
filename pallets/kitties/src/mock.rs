@@ -21,7 +21,11 @@ frame_support::construct_runtime!(
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage},
 		Balances: pallet_balances::{Pallet, Call, Storage,Event<T>,Config<T>},
 		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet},
+<<<<<<< HEAD
 		Kitty: pallet_kitties::{Pallet, Call, Storage, Event<T>},
+=======
+		Kitties: pallet_kitties::{Pallet, Call, Storage, Event<T>},
+>>>>>>> b9b9eef444eee9febbc687937ae5ced2bce8b680
 
 	}
 );
