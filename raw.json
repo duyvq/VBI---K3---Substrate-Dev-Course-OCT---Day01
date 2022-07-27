@@ -1,0 +1,100 @@
+[
+  {
+    "pallet": "pallet_kitties",
+    "instance": "Kitty",
+    "benchmark": "create_kitty",
+    "time_results": [
+      {
+        "components": [],
+        "extrinsic_time": 147100,
+        "storage_root_time": 5800,
+        "reads": 0,
+        "repeat_reads": 0,
+        "writes": 0,
+        "repeat_writes": 0,
+        "proof_size": 0
+      },
+      {
+        "components": [],
+        "extrinsic_time": 123600,
+        "storage_root_time": 5400,
+        "reads": 0,
+        "repeat_reads": 0,
+        "writes": 0,
+        "repeat_writes": 0,
+        "proof_size": 0
+      }
+    ],
+    "db_results": [
+      {
+        "components": [],
+        "extrinsic_time": 175800,
+        "storage_root_time": 6500,
+        "reads": 5,
+        "repeat_reads": 3,
+        "writes": 3,
+        "repeat_writes": 0,
+        "proof_size": 0
+      },
+      {
+        "components": [],
+        "extrinsic_time": 169100,
+        "storage_root_time": 6700,
+        "reads": 5,
+        "repeat_reads": 3,
+        "writes": 3,
+        "repeat_writes": 0,
+        "proof_size": 0
+      }
+    ]
+  },
+  {
+    "pallet": "pallet_kitties",
+    "instance": "Kitty",
+    "benchmark": "transfer",
+    "time_results": [
+      {
+        "components": [],
+        "extrinsic_time": 64900,
+        "storage_root_time": 5700,
+        "reads": 0,
+        "repeat_reads": 0,
+        "writes": 0,
+        "repeat_writes": 0,
+        "proof_size": 0
+      },
+      {
+        "components": [],
+        "extrinsic_time": 67400,
+        "storage_root_time": 5900,
+        "reads": 0,
+        "repeat_reads": 0,
+        "writes": 0,
+        "repeat_writes": 0,
+        "proof_size": 0
+      }
+    ],
+    "db_results": [
+      {
+        "components": [],
+        "extrinsic_time": 69200,
+        "storage_root_time": 5900,
+        "reads": 3,
+        "repeat_reads": 0,
+        "writes": 3,
+        "repeat_writes": 0,
+        "proof_size": 0
+      },
+      {
+        "components": [],
+        "extrinsic_time": 64700,
+        "storage_root_time": 5500,
+        "reads": 3,
+        "repeat_reads": 0,
+        "writes": 3,
+        "repeat_writes": 0,
+        "proof_size": 0
+      }
+    ]
+  }
+]
