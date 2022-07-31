@@ -5,11 +5,11 @@
 /// <https://docs.substrate.io/v3/runtime/frame>
 pub use pallet::*;
 
-#[cfg(test)]
-mod mock;
+// #[cfg(test)]
+// mod mock;
 
-#[cfg(test)]
-mod tests;
+// #[cfg(test)]
+// mod tests;
 
 // #[cfg(feature = "runtime-benchmarks")]
 // mod benchmarking;
@@ -20,28 +20,17 @@ use frame_system::pallet_prelude::*;
 #[frame_support::pallet]
 pub mod pallet {
 	pub use super::*;
-	#[derive(TypeInfo, Default, Encode, Decode, PartialEq)]
+	#[derive(TypeInfo, Default, Encode, Decode)]
 	#[scale_info(skip_type_params(T))]
 	pub struct Students<T: Config> {
-		pub name: Vec<u8>,
-		pub age: u8,
-		pub gender: Gender,
-		pub account: T::AccountId,
+		name: Vec<u8>,
+		age: u8,
+		gender: Gender,
+		account: T::AccountId,
 	}
-
-	impl<T: Config> fmt::Debug for Students<T> {
-		fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-			f.debug_struct("Students")
-			 .field("name", &self.name)
-			 .field("age", &self.gender)
-			 .field("account", &self.account)
-			 .finish()
-		}
-	}
-
 	pub type Id = u32;
 
-	#[derive(TypeInfo, Encode, Decode, RuntimeDebug, Clone, PartialEq)]
+	#[derive(TypeInfo, Encode, Decode, Debug)]
 	pub enum Gender {
 		Male,
 		Female,
@@ -115,18 +104,14 @@ pub mod pallet {
 			let who = ensure_signed(origin)?;
 			ensure!(age > 20, Error::<T>::TooYoung);
 			let gender = Self::gen_gender(name.clone())?;
-			let student = Students { name: name.clone(), age, gender: gender.clone(), account: who };
+			let student = Students { name: name.clone(), age, gender, account: who };
 			// let current_id = Self::student_id();
 			// let current_id = StudentId::<T>::get();
 			let mut current_id = <StudentId<T>>::get();
-			current_id += 1;
-			log::info!("Current id : {}", current_id);
-			log::info!("Genderr : {:?}", student.gender);
-			log::warn!("Student : {:?}", &student);
 
 			// Student::<T>::insert(current_id, student);
 			<Student<T>>::insert(current_id, student);
-			
+			current_id += 1;
 			StudentId::<T>::put(current_id);
 			// Emit an event.
 			Self::deposit_event(Event::StudentStored(name, age));

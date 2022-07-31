@@ -18,4 +18,3 @@ use frame_support::{assert_noop, assert_ok};
 // 		assert_noop!(TemplateModule::cause_error(Origin::signed(1)), Error::<Test>::NoneValue);
 // 	});
 // }
-
