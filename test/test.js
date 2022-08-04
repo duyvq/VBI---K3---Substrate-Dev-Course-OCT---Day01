@@ -16,7 +16,7 @@ const main= async() => {
 
       ];
     
-    for (i =0 ; i<198; i++){
+    for (i =0 ; i<100; i++){
         txs.push(api.tx.balances.transfer(bob.address, 12345));
     }
 

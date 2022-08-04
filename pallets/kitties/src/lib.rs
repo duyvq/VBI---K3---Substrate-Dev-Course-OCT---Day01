@@ -20,35 +20,46 @@ use scale_info::TypeInfo;
 use sp_std::vec::Vec;
 pub type Id = u32;
 use frame_support::traits::Currency;
-use sp_runtime::ArithmeticError;
-use frame_support::traits::Time;
+use sp_runtime::{ArithmeticError};
+use serde::{Serialize, Deserialize,};
+
+
+use frame_support::traits::UnixTime;
 type BalanceOf<T> =
 	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
 use sp_runtime::traits::Hash;
 
 use frame_support::traits::Randomness;
-use frame_support::dispatch::fmt::Debug;
+use frame_support::dispatch::fmt::{Debug};
 
-use sp_runtime::SaturatedConversion;
-#[frame_support::pallet]
-pub mod pallet {
 
-	pub use super::*;
-	#[derive(Clone, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo)]
+
+#[derive(Clone, Encode, Decode, PartialEq, RuntimeDebug, TypeInfo)]
 	#[scale_info(skip_type_params(T))]
+	// #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 	pub struct Kitty<T: Config> {
-		pub dna: T::Hash,
+		// #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+		pub dna: Vec<u8>,
 		pub price: BalanceOf<T>,
 		pub gender: Gender,
 		pub owner: T::AccountId,
-		pub created_date: <<T as Config>::KittyTime as Time>::Moment ,
+		pub created_date: u64,
 	}
+
+
 	#[derive(Clone, Encode, Decode, PartialEq, Copy, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+	#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 	pub enum Gender {
 		Male,
 		Female,
 	}
+
+#[frame_support::pallet]
+pub mod pallet {
+
+	pub use super::*;
+	
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
@@ -56,7 +67,8 @@ pub mod pallet {
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 		type Currency: Currency<Self::AccountId>;
-		type KittyTime: Time;
+		//type KittyTime: Time;
+		type UnixTime: UnixTime;
 		type KittyRandom: Randomness<Self::Hash, Self::BlockNumber>;
 		type Max: Get<u32>;
 	}
@@ -75,12 +87,12 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn get_kitty)]
 	pub(super) type Kitties<T: Config> =
-		StorageMap<_, Blake2_128Concat, T::Hash, Kitty<T>, OptionQuery>;
+		StorageMap<_, Blake2_128Concat, Vec<u8>, Kitty<T>, OptionQuery>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn kitty_owned)]
 	pub(super) type KittiesOwned<T: Config> =
-		StorageMap<_, Blake2_128Concat, T::AccountId, BoundedVec<T::Hash, T::Max>, ValueQuery>;
+		StorageMap<_, Blake2_128Concat, T::AccountId, BoundedVec<Vec<u8>, T::Max>, ValueQuery>;
 
 	// Pallets use events to inform users when important changes are made.
 	// https://docs.substrate.io/v3/runtime/events-and-errors
@@ -89,13 +101,13 @@ pub mod pallet {
 	pub enum Event<T: Config> {
 		/// A new kitty was successfully created.
 		Created {
-			kitty:T::Hash,
+			kitty:Vec<u8>,
 			owner: T::AccountId,
 		},
 		Transferred {
 			from: T::AccountId,
 			to: T::AccountId,
-			kitty: T::Hash,
+			kitty: Vec<u8>,
 		},
 	}
 
@@ -109,6 +121,40 @@ pub mod pallet {
 		TransferToSelf,
 		CannotConvert,
 		ExceedKittyNumber,
+	}
+	
+	#[pallet::genesis_config]
+	// #[derive(Serialize, Deserialize)]
+	// #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+	pub struct GenesisConfig<T: Config>{
+		pub genesis_qty: u32,
+		pub genesis_kitty_1: Vec<(Vec<u8>, T::AccountId, u64)>,
+	}
+
+	#[cfg(feature="std")]
+	impl<T: Config> Default for GenesisConfig<T>{
+		fn default() -> GenesisConfig<T> {
+			GenesisConfig {
+				genesis_qty: 0u32,
+				genesis_kitty_1: vec![],
+
+			}
+		}
+	}
+
+	#[pallet::genesis_build]
+	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+		fn build(&self) {
+			let mut counter = self.genesis_qty;
+			for (dna, owner, created_date) in self.genesis_kitty_1.clone().into_iter() {
+				let gender = Pallet::<T>::gen_gender(&dna).unwrap();
+				let kitty = Kitty::<T> { dna: dna.clone(), price: 0u32.into(), gender, owner: owner.clone(), created_date };
+				Kitties::<T>::insert(&dna, kitty);
+				KittiesOwned::<T>::try_append(&owner, &dna).unwrap();
+				counter += 1;
+				KittyId::<T>::put(counter);
+			}		
+		}
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -125,17 +171,18 @@ pub mod pallet {
 			log::info!("total balance:{:?}", T::Currency::total_balance(&owner));
 			let gender = Self::gen_gender(&dna)?;
 			// let now = pallet_timestamp::Pallet::<T>::now();
-			let now = T::KittyTime::now();
-			let dna = Self::gen_dna();
+			// let now = T::KittyTime::now();
+			let created_date = T::UnixTime::now().as_secs();
+			// let dna = Self::gen_dna();
 			let kitty =
-				Kitty::<T> { dna: dna.clone(), price: 0u32.into(), gender, owner: owner.clone(), created_date:now };
+				Kitty::<T> { dna: dna.clone(), price: 0u32.into(), gender, owner: owner.clone(), created_date };
 
 			let max = T::Max::get();
 			let get_kitties = KittiesOwned::<T>::get(&owner);
 			ensure!((get_kitties.len() as u32) < max, Error::<T>::ExceedKittyNumber); 
-			let convert = T::KittyTime::now().saturated_into::<u64>();
+			//let convert = T::KittyTime::now().saturated_into::<u64>();
 			//let convert_moment =<<T as Config>::KittyTime as Time>::Moment::saturated_from(convert);
-			let convert_moment: <<T as Config>::KittyTime as Time>::Moment = now.try_into().map_err(|_| Error::<T>::CannotConvert)?;
+			//let convert_moment: <<T as Config>::KittyTime as Time>::Moment = now.try_into().map_err(|_| Error::<T>::CannotConvert)?;
 			//let convert_moment = now.saturated_from(convert);
 			// Check if the kitty does not already exist in our storage map
 			ensure!(!Kitties::<T>::contains_key(&kitty.dna), Error::<T>::DuplicateKitty);
@@ -160,7 +207,7 @@ pub mod pallet {
 			Ok(())
 		}
 		#[pallet::weight(0)]
-		pub fn transfer(origin: OriginFor<T>, to: T::AccountId, dna: T::Hash) -> DispatchResult {
+		pub fn transfer(origin: OriginFor<T>, to: T::AccountId, dna: Vec<u8>) -> DispatchResult {
 			// Make sure the caller is from a signed origin
 			let from = ensure_signed(origin)?;
 			let mut kitty = Kitties::<T>::get(&dna).ok_or(Error::<T>::NoKitty)?;
@@ -177,7 +224,7 @@ pub mod pallet {
 			}
 
 			let mut to_owned = KittiesOwned::<T>::get(&to);
-			to_owned.try_push(dna.clone()).map_err(|_| Error::<T>::ExceedKittyNumber)?;;
+			to_owned.try_push(dna.clone()).map_err(|_| Error::<T>::ExceedKittyNumber)?;
 			kitty.owner = to.clone();
 
 			// Write updates to storage

@@ -83,7 +83,8 @@ impl pallet_randomness_collective_flip::Config for Test {
 impl pallet_kitties::Config for Test {
 	type Event = Event;
 	type Currency = Balances;
-	type KittyTime = Timestamp;
+	// type KittyTime = Timestamp;
+	type UnixTime = Timestamp;
 	type KittyRandom = RandomnessCollectiveFlip;
 	type Max = ConstU32<10>;
 }

@@ -1,6 +1,6 @@
 use node_template_runtime::{
 	AccountId, AuraConfig, BalancesConfig, GenesisConfig, GrandpaConfig, Signature, SudoConfig,
-	SystemConfig, WASM_BINARY,TemplateModuleConfig,
+	SystemConfig, WASM_BINARY,TemplateModuleConfig, KittiesConfig,
 };
 use sc_service::ChainType;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -51,7 +51,7 @@ pub fn development_config() -> Result<ChainSpec, String> {
 				// Initial PoA authorities
 				vec![authority_keys_from_seed("Alice")],
 				// Sudo account
-				get_account_id_from_seed::<sr25519::Public>("Bob"),
+				get_account_id_from_seed::<sr25519::Public>("Alice"),
 				// Pre-funded accounts
 				vec![
 					get_account_id_from_seed::<sr25519::Public>("Alice"),
@@ -158,6 +158,16 @@ fn testnet_genesis(
 		transaction_payment: Default::default(),
 		template_module: TemplateModuleConfig {
 			genesis_value: 10u32
+		},
+		kitties: KittiesConfig {
+			genesis_qty: 0u32,
+			genesis_kitty_1: vec![(b"duy".to_vec(), 
+								get_account_id_from_seed::<sr25519::Public>("Alice"), 
+								0u64),
+								(b"linh".to_vec(),
+								get_account_id_from_seed::<sr25519::Public>("Alice"),
+								0u64),
+								],
 		}
 	}
 }
